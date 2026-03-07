@@ -36,12 +36,15 @@ export interface ApiResponse {
   };
 }
 
-export async function fetchProjects(limit = 100): Promise<FreelancerProject[]> {
-  const url = `${BASE_URL}?owner_info=true&limit=${limit}&full_description=true&job_details=true`;
+export async function fetchProjects(limit = 100, offset = 0): Promise<{ projects: FreelancerProject[]; totalCount: number }> {
+  const url = `${BASE_URL}?owner_info=true&limit=${limit}&offset=${offset}&full_description=true&job_details=true&compact=true&count=true`;
   const response = await fetch(url);
   if (!response.ok) throw new Error("Failed to fetch projects");
-  const data: ApiResponse = await response.json();
-  return data.result.projects;
+  const data = await response.json();
+  return {
+    projects: data.result.projects,
+    totalCount: data.result.total_count ?? 10000,
+  };
 }
 
 export function getProjectUrl(id: number): string {

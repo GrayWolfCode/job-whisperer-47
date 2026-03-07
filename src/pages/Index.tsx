@@ -36,10 +36,8 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [filters, setFilters] = useState<Filters>(() => readFiltersFromParams(searchParams));
 
-  // Fetch 100 projects with offset based on current page
-  // We fetch a "window" of 100, offset by page batches
-  const batchIndex = Math.floor((currentPage - 1) / 10); // each batch = 10 pages * 10 items = 100
-  const batchOffset = batchIndex * 100;
+  // Each page shows 100 items, offset increments by 100
+  const batchOffset = (currentPage - 1) * 100;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["projects", batchOffset],

@@ -7,7 +7,7 @@ import { JobPagination } from "@/components/JobPagination";
 import { FilterSidebar, type Filters } from "@/components/FilterSidebar";
 import { Loader2 } from "lucide-react";
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 100;
 
 function readFiltersFromParams(params: URLSearchParams): Filters {
   const countries = params.get("xc");

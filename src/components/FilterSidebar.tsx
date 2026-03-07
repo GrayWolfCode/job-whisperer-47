@@ -131,7 +131,7 @@ export function FilterSidebar({ filters, onFiltersChange }: Props) {
       {/* Exclude Reviews */}
       <div className="space-y-3">
         <label className="text-xs font-medium text-muted-foreground">
-          Exclude reviews below: <span className="text-foreground font-semibold">{filters.excludeReviewsBelow}</span>
+          Show reviews below: <span className="text-foreground font-semibold">{filters.excludeReviewsBelow}</span>
         </label>
         <Slider
           value={[filters.excludeReviewsBelow]}

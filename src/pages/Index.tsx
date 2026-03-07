@@ -7,7 +7,7 @@ import { JobPagination } from "@/components/JobPagination";
 import { FilterSidebar, type Filters } from "@/components/FilterSidebar";
 import { Loader2 } from "lucide-react";
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 100;
 
 function readFiltersFromParams(params: URLSearchParams): Filters {
   const countries = params.get("xc");
@@ -36,10 +36,8 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [filters, setFilters] = useState<Filters>(() => readFiltersFromParams(searchParams));
 
-  // Fetch 100 projects with offset based on current page
-  // We fetch a "window" of 100, offset by page batches
-  const batchIndex = Math.floor((currentPage - 1) / 10); // each batch = 10 pages * 10 items = 100
-  const batchOffset = batchIndex * 100;
+  // Each page shows 100 items, offset increments by 100
+  const batchOffset = (currentPage - 1) * 100;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["projects", batchOffset],
@@ -63,18 +61,13 @@ const Index = () => {
       if (filters.excludeReviewsBelow > 0) {
         const reviews = p.owner_info?.reputation?.entire_history?.all ??
           p.owner_info?.employer_reputation?.entire_history?.all ?? 0;
-        if ((reviews ?? 0) < filters.excludeReviewsBelow) return false;
+        if ((reviews ?? 0) >= filters.excludeReviewsBelow) return false;
       }
       return true;
     });
   }, [projects, filters]);
 
-  // Within current batch, calculate local pagination
-  const localPageIndex = (currentPage - 1) % 10;
-  const paginatedProjects = filteredProjects.slice(
-    localPageIndex * ITEMS_PER_PAGE,
-    (localPageIndex + 1) * ITEMS_PER_PAGE
-  );
+  const paginatedProjects = filteredProjects;
 
   // Total pages estimate
   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));

@@ -61,7 +61,7 @@ const Index = () => {
       if (filters.excludeReviewsBelow > 0) {
         const reviews = p.owner_info?.reputation?.entire_history?.all ??
           p.owner_info?.employer_reputation?.entire_history?.all ?? 0;
-        if ((reviews ?? 0) < filters.excludeReviewsBelow) return false;
+        if ((reviews ?? 0) >= filters.excludeReviewsBelow) return false;
       }
       return true;
     });

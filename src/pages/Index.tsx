@@ -67,12 +67,7 @@ const Index = () => {
     });
   }, [projects, filters]);
 
-  // Within current batch, calculate local pagination
-  const localPageIndex = (currentPage - 1) % 10;
-  const paginatedProjects = filteredProjects.slice(
-    localPageIndex * ITEMS_PER_PAGE,
-    (localPageIndex + 1) * ITEMS_PER_PAGE
-  );
+  const paginatedProjects = filteredProjects;
 
   // Total pages estimate
   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));

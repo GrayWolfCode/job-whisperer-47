@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, ExternalLink, User } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink, User, Clock, Briefcase } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ClientInfoPopover } from "@/components/ClientInfoPopover";
@@ -12,7 +12,8 @@ interface Props {
 
 export function JobRow({ project }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const { title, budget, currency, description, jobs, bid_stats, id, time_submitted } = project;
+  const { title, budget, currency, description, jobs, bid_stats, id, time_submitted, type } = project;
+  const isHourly = type === "hourly";
 
   return (
     <div className="border-b border-border last:border-b-0">
@@ -25,8 +26,12 @@ export function JobRow({ project }: Props) {
           {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         </span>
 
-        <div className="flex-1 min-w-0">
-          <span className="text-sm font-medium text-foreground truncate block">{title}</span>
+        <div className="flex-1 min-w-0 flex items-center gap-2">
+          <span className="text-sm font-medium text-foreground truncate">{title}</span>
+          <Badge variant="outline" className="text-[10px] shrink-0 gap-1 px-1.5 py-0">
+            {isHourly ? <Clock className="w-3 h-3" /> : <Briefcase className="w-3 h-3" />}
+            {isHourly ? "Hourly" : "Fixed"}
+          </Badge>
         </div>
 
         {/* Bids info */}

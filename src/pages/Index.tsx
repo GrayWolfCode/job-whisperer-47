@@ -1,11 +1,11 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import { fetchProjects, type FreelancerProject } from "@/lib/freelancer-api";
+import { fetchProjects, fetchSelf, type FreelancerProject } from "@/lib/freelancer-api";
 import { JobRow } from "@/components/JobRow";
 import { JobPagination } from "@/components/JobPagination";
 import { FilterSidebar, type Filters } from "@/components/FilterSidebar";
-import { Loader2 } from "lucide-react";
+import { Loader2, User } from "lucide-react";
 
 const ITEMS_PER_PAGE = 100;
 
@@ -13,10 +13,12 @@ function readFiltersFromParams(params: URLSearchParams): Filters {
   const countries = params.get("xc");
   const skills = params.get("xs");
   const reviews = params.get("xr");
+  const bids = params.get("xb");
   return {
     excludeCountries: countries ? countries.split(",").filter(Boolean) : [],
     excludeSkills: skills ? skills.split(",").filter(Boolean) : [],
     excludeReviewsBelow: reviews ? Number(reviews) : 0,
+    maxBids: bids ? Number(bids) : 0,
   };
 }
 
@@ -27,6 +29,8 @@ function writeFiltersToParams(filters: Filters, params: URLSearchParams) {
   else params.delete("xs");
   if (filters.excludeReviewsBelow > 0) params.set("xr", String(filters.excludeReviewsBelow));
   else params.delete("xr");
+  if (filters.maxBids > 0) params.set("xb", String(filters.maxBids));
+  else params.delete("xb");
 }
 
 const Index = () => {
@@ -36,13 +40,18 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [filters, setFilters] = useState<Filters>(() => readFiltersFromParams(searchParams));
 
-  // Each page shows 100 items, offset increments by 100
   const batchOffset = (currentPage - 1) * 100;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["projects", batchOffset],
     queryFn: () => fetchProjects(100, batchOffset),
     refetchInterval: 30000,
+  });
+
+  const { data: userData } = useQuery({
+    queryKey: ["self"],
+    queryFn: fetchSelf,
+    staleTime: Infinity,
   });
 
   const projects = data?.projects ?? [];
@@ -63,16 +72,16 @@ const Index = () => {
           p.owner_info?.employer_reputation?.entire_history?.all ?? 0;
         if ((reviews ?? 0) >= filters.excludeReviewsBelow) return false;
       }
+      if (filters.maxBids > 0) {
+        if (p.bid_stats.bid_count >= filters.maxBids) return false;
+      }
       return true;
     });
   }, [projects, filters]);
 
   const paginatedProjects = filteredProjects;
-
-  // Total pages estimate
   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
 
-  // Sync state to URL
   useEffect(() => {
     const newParams = new URLSearchParams(searchParams);
     if (currentPage > 1) newParams.set("p", String(currentPage));
@@ -94,9 +103,17 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="px-4 py-4 max-w-7xl mx-auto">
-          <h1 className="text-xl font-bold text-foreground tracking-tight">Lancer</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Live freelance projects</p>
+        <div className="px-4 py-4 max-w-7xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-foreground tracking-tight">Lancer</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Live freelance projects</p>
+          </div>
+          {userData && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <User className="w-4 h-4" />
+              <span className="font-medium text-foreground">{userData.display_name}</span>
+            </div>
+          )}
         </div>
       </header>
 

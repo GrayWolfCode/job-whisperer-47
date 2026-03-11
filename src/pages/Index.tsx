@@ -13,11 +13,13 @@ function readFiltersFromParams(params: URLSearchParams): Filters {
   const countries = params.get("xc");
   const skills = params.get("xs");
   const maxBids = params.get("xb");
+  const maxReviews = params.get("xr");
 
   return {
     excludeCountries: countries ? countries.split(",").filter(Boolean) : [],
     excludeSkills: skills ? skills.split(",").filter(Boolean) : [],
     maxBids: maxBids ? Number(maxBids) : 0,
+    maxReviews: maxReviews ? Number(maxReviews) : 0,
   };
 }
 
@@ -38,6 +40,12 @@ function writeFiltersToParams(filters: Filters, params: URLSearchParams) {
     params.set("xb", String(filters.maxBids));
   } else {
     params.delete("xb");
+  }
+
+  if (filters.maxReviews > 0) {
+    params.set("xr", String(filters.maxReviews));
+  } else {
+    params.delete("xr");
   }
 }
 
@@ -78,6 +86,13 @@ const Index = () => {
       if (filters.maxBids > 0) {
         const bidCount = p.bid_stats?.bid_count ?? 0;
         if (bidCount >= filters.maxBids) {
+          return false;
+        }
+      }
+
+      if (filters.maxReviews > 0) {
+        const reviewCount = p.owner_info?.employer_reputation?.entire_history?.all ?? 0;
+        if ((reviewCount as number) >= filters.maxReviews) {
           return false;
         }
       }

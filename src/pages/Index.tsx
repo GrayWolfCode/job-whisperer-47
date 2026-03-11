@@ -90,6 +90,13 @@ const Index = () => {
         }
       }
 
+      if (filters.maxReviews > 0) {
+        const reviewCount = p.owner_info?.employer_reputation?.entire_history?.all ?? 0;
+        if ((reviewCount as number) >= filters.maxReviews) {
+          return false;
+        }
+      }
+
       return true;
     });
   }, [projects, filters]);

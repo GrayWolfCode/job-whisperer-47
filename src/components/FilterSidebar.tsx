@@ -185,6 +185,30 @@ export function FilterSidebar({ filters, onFiltersChange }: Props) {
           Only shows projects with bid count smaller than this number.
         </p>
       </div>
+
+      <Separator />
+
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-muted-foreground">
+          Show reviews below:
+        </label>
+        <Input
+          type="number"
+          min={0}
+          value={filters.maxReviews || ""}
+          onChange={(e) =>
+            onFiltersChange({
+              ...filters,
+              maxReviews: Number(e.target.value) || 0,
+            })
+          }
+          placeholder="e.g. 10"
+          className="h-8 text-xs"
+        />
+        <p className="text-[10px] text-muted-foreground">
+          Only shows clients with fewer reviews than this number.
+        </p>
+      </div>
     </aside>
   );
 }

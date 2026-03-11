@@ -1,7 +1,7 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import { fetchProjects } from "@/lib/freelancer-api";
+import { fetchProjects, type FreelancerProject } from "@/lib/freelancer-api";
 import { JobRow } from "@/components/JobRow";
 import { JobPagination } from "@/components/JobPagination";
 import { FilterSidebar, type Filters } from "@/components/FilterSidebar";
@@ -12,41 +12,21 @@ const ITEMS_PER_PAGE = 100;
 function readFiltersFromParams(params: URLSearchParams): Filters {
   const countries = params.get("xc");
   const skills = params.get("xs");
-  const maxBids = params.get("xb");
-  const maxReviews = params.get("xr");
-
+  const reviews = params.get("xr");
   return {
     excludeCountries: countries ? countries.split(",").filter(Boolean) : [],
     excludeSkills: skills ? skills.split(",").filter(Boolean) : [],
-    maxBids: maxBids ? Number(maxBids) : 0,
-    maxReviews: maxReviews ? Number(maxReviews) : 0,
+    excludeReviewsBelow: reviews ? Number(reviews) : 0,
   };
 }
 
 function writeFiltersToParams(filters: Filters, params: URLSearchParams) {
-  if (filters.excludeCountries.length) {
-    params.set("xc", filters.excludeCountries.join(","));
-  } else {
-    params.delete("xc");
-  }
-
-  if (filters.excludeSkills.length) {
-    params.set("xs", filters.excludeSkills.join(","));
-  } else {
-    params.delete("xs");
-  }
-
-  if (filters.maxBids > 0) {
-    params.set("xb", String(filters.maxBids));
-  } else {
-    params.delete("xb");
-  }
-
-  if (filters.maxReviews > 0) {
-    params.set("xr", String(filters.maxReviews));
-  } else {
-    params.delete("xr");
-  }
+  if (filters.excludeCountries.length) params.set("xc", filters.excludeCountries.join(","));
+  else params.delete("xc");
+  if (filters.excludeSkills.length) params.set("xs", filters.excludeSkills.join(","));
+  else params.delete("xs");
+  if (filters.excludeReviewsBelow > 0) params.set("xr", String(filters.excludeReviewsBelow));
+  else params.delete("xr");
 }
 
 const Index = () => {
@@ -56,11 +36,12 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [filters, setFilters] = useState<Filters>(() => readFiltersFromParams(searchParams));
 
-  const batchOffset = (currentPage - 1) * ITEMS_PER_PAGE;
+  // Each page shows 100 items, offset increments by 100
+  const batchOffset = (currentPage - 1) * 100;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["projects", batchOffset],
-    queryFn: () => fetchProjects(ITEMS_PER_PAGE, batchOffset),
+    queryFn: () => fetchProjects(100, batchOffset),
     refetchInterval: 30000,
   });
 
@@ -71,59 +52,42 @@ const Index = () => {
     return projects.filter((p) => {
       if (filters.excludeCountries.length > 0) {
         const country = p.owner_info?.country?.name?.toLowerCase() ?? "";
-        if (filters.excludeCountries.some((c) => country.includes(c.toLowerCase()))) {
-          return false;
-        }
+        if (filters.excludeCountries.some((c) => country.includes(c.toLowerCase()))) return false;
       }
-
       if (filters.excludeSkills.length > 0) {
-        const skills = p.jobs?.map((j) => j.name.toLowerCase()) ?? [];
-        if (filters.excludeSkills.some((s) => skills.some((sk) => sk.includes(s.toLowerCase())))) {
-          return false;
-        }
+        const skills = p.jobs.map((j) => j.name.toLowerCase());
+        if (filters.excludeSkills.some((s) => skills.some((sk) => sk.includes(s.toLowerCase())))) return false;
       }
-
-      if (filters.maxBids > 0) {
-        const bidCount = p.bid_stats?.bid_count ?? 0;
-        if (bidCount >= filters.maxBids) {
-          return false;
-        }
+      if (filters.excludeReviewsBelow > 0) {
+        const reviews = p.owner_info?.reputation?.entire_history?.all ??
+          p.owner_info?.employer_reputation?.entire_history?.all ?? 0;
+        if ((reviews ?? 0) >= filters.excludeReviewsBelow) return false;
       }
-
-      if (filters.maxReviews > 0) {
-        const reviewCount = p.owner_info?.employer_reputation?.entire_history?.all ?? 0;
-        if ((reviewCount as number) >= filters.maxReviews) {
-          return false;
-        }
-      }
-
       return true;
     });
   }, [projects, filters]);
 
   const paginatedProjects = filteredProjects;
+
+  // Total pages estimate
   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
 
+  // Sync state to URL
   useEffect(() => {
     const newParams = new URLSearchParams(searchParams);
-
-    if (currentPage > 1) {
-      newParams.set("p", String(currentPage));
-    } else {
-      newParams.delete("p");
-    }
-
+    if (currentPage > 1) newParams.set("p", String(currentPage));
+    else newParams.delete("p");
     writeFiltersToParams(filters, newParams);
     setSearchParams(newParams, { replace: true });
-  }, [currentPage, filters, searchParams, setSearchParams]);
+  }, [currentPage, filters]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleFiltersChange = (newFilters: Filters) => {
-    setFilters(newFilters);
+  const handleFiltersChange = (f: Filters) => {
+    setFilters(f);
     setCurrentPage(1);
   };
 

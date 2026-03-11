@@ -38,11 +38,7 @@ export interface ApiResponse {
 
 export async function fetchProjects(limit = 100, offset = 0): Promise<{ projects: FreelancerProject[]; totalCount: number }> {
   const url = `${BASE_URL}?owner_info=true&limit=${limit}&offset=${offset}&full_description=true&job_details=true&compact=true&count=true`;
-  const response = await fetch(url, {
-    headers: {
-      "freelancer-oauth-v1": "pKph7V9y0BSHVFZxOzOOdMnWQNO1HK",
-    },
-  });
+  const response = await fetch(url);
   if (!response.ok) throw new Error("Failed to fetch projects");
   const data = await response.json();
   return {

@@ -9,6 +9,7 @@ export interface Filters {
   excludeCountries: string[];
   excludeSkills: string[];
   maxBids: number;
+  maxReviews: number;
 }
 
 interface Props {

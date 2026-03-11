@@ -1,7 +1,7 @@
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import { fetchProjects, type FreelancerProject } from "@/lib/freelancer-api";
+import { fetchProjects } from "@/lib/freelancer-api";
 import { JobRow } from "@/components/JobRow";
 import { JobPagination } from "@/components/JobPagination";
 import { FilterSidebar, type Filters } from "@/components/FilterSidebar";
@@ -12,21 +12,33 @@ const ITEMS_PER_PAGE = 100;
 function readFiltersFromParams(params: URLSearchParams): Filters {
   const countries = params.get("xc");
   const skills = params.get("xs");
-  const reviews = params.get("xr");
+  const maxBids = params.get("xb");
+
   return {
     excludeCountries: countries ? countries.split(",").filter(Boolean) : [],
     excludeSkills: skills ? skills.split(",").filter(Boolean) : [],
-    excludeReviewsBelow: reviews ? Number(reviews) : 0,
+    maxBids: maxBids ? Number(maxBids) : 0,
   };
 }
 
 function writeFiltersToParams(filters: Filters, params: URLSearchParams) {
-  if (filters.excludeCountries.length) params.set("xc", filters.excludeCountries.join(","));
-  else params.delete("xc");
-  if (filters.excludeSkills.length) params.set("xs", filters.excludeSkills.join(","));
-  else params.delete("xs");
-  if (filters.excludeReviewsBelow > 0) params.set("xr", String(filters.excludeReviewsBelow));
-  else params.delete("xr");
+  if (filters.excludeCountries.length) {
+    params.set("xc", filters.excludeCountries.join(","));
+  } else {
+    params.delete("xc");
+  }
+
+  if (filters.excludeSkills.length) {
+    params.set("xs", filters.excludeSkills.join(","));
+  } else {
+    params.delete("xs");
+  }
+
+  if (filters.maxBids > 0) {
+    params.set("xb", String(filters.maxBids));
+  } else {
+    params.delete("xb");
+  }
 }
 
 const Index = () => {
@@ -36,12 +48,11 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [filters, setFilters] = useState<Filters>(() => readFiltersFromParams(searchParams));
 
-  // Each page shows 100 items, offset increments by 100
-  const batchOffset = (currentPage - 1) * 100;
+  const batchOffset = (currentPage - 1) * ITEMS_PER_PAGE;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["projects", batchOffset],
-    queryFn: () => fetchProjects(100, batchOffset),
+    queryFn: () => fetchProjects(ITEMS_PER_PAGE, batchOffset),
     refetchInterval: 30000,
   });
 
@@ -52,42 +63,52 @@ const Index = () => {
     return projects.filter((p) => {
       if (filters.excludeCountries.length > 0) {
         const country = p.owner_info?.country?.name?.toLowerCase() ?? "";
-        if (filters.excludeCountries.some((c) => country.includes(c.toLowerCase()))) return false;
+        if (filters.excludeCountries.some((c) => country.includes(c.toLowerCase()))) {
+          return false;
+        }
       }
+
       if (filters.excludeSkills.length > 0) {
-        const skills = p.jobs.map((j) => j.name.toLowerCase());
-        if (filters.excludeSkills.some((s) => skills.some((sk) => sk.includes(s.toLowerCase())))) return false;
+        const skills = p.jobs?.map((j) => j.name.toLowerCase()) ?? [];
+        if (filters.excludeSkills.some((s) => skills.some((sk) => sk.includes(s.toLowerCase())))) {
+          return false;
+        }
       }
-      if (filters.excludeReviewsBelow > 0) {
-        const reviews = p.owner_info?.reputation?.entire_history?.all ??
-          p.owner_info?.employer_reputation?.entire_history?.all ?? 0;
-        if ((reviews ?? 0) >= filters.excludeReviewsBelow) return false;
+
+      if (filters.maxBids > 0) {
+        const bidCount = p.bid_stats?.bid_count ?? 0;
+        if (bidCount >= filters.maxBids) {
+          return false;
+        }
       }
+
       return true;
     });
   }, [projects, filters]);
 
   const paginatedProjects = filteredProjects;
-
-  // Total pages estimate
   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
 
-  // Sync state to URL
   useEffect(() => {
     const newParams = new URLSearchParams(searchParams);
-    if (currentPage > 1) newParams.set("p", String(currentPage));
-    else newParams.delete("p");
+
+    if (currentPage > 1) {
+      newParams.set("p", String(currentPage));
+    } else {
+      newParams.delete("p");
+    }
+
     writeFiltersToParams(filters, newParams);
     setSearchParams(newParams, { replace: true });
-  }, [currentPage, filters]);
+  }, [currentPage, filters, searchParams, setSearchParams]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleFiltersChange = (f: Filters) => {
-    setFilters(f);
+  const handleFiltersChange = (newFilters: Filters) => {
+    setFilters(newFilters);
     setCurrentPage(1);
   };
 

@@ -41,6 +41,12 @@ function writeFiltersToParams(filters: Filters, params: URLSearchParams) {
   } else {
     params.delete("xb");
   }
+
+  if (filters.maxReviews > 0) {
+    params.set("xr", String(filters.maxReviews));
+  } else {
+    params.delete("xr");
+  }
 }
 
 const Index = () => {

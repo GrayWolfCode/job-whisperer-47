@@ -13,11 +13,13 @@ function readFiltersFromParams(params: URLSearchParams): Filters {
   const countries = params.get("xc");
   const skills = params.get("xs");
   const maxBids = params.get("xb");
+  const maxReviews = params.get("xr");
 
   return {
     excludeCountries: countries ? countries.split(",").filter(Boolean) : [],
     excludeSkills: skills ? skills.split(",").filter(Boolean) : [],
     maxBids: maxBids ? Number(maxBids) : 0,
+    maxReviews: maxReviews ? Number(maxReviews) : 0,
   };
 }
 

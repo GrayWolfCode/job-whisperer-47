@@ -146,6 +146,26 @@ export function FilterSidebar({ filters, onFiltersChange }: Props) {
           <span>100</span>
         </div>
       </div>
+
+      <Separator />
+
+      {/* Max Bids */}
+      <div className="space-y-3">
+        <label className="text-xs font-medium text-muted-foreground">
+          Show bids below: <span className="text-foreground font-semibold">{filters.maxBids}</span>
+        </label>
+        <Slider
+          value={[filters.maxBids]}
+          onValueChange={([v]) => onFiltersChange({ ...filters, maxBids: v })}
+          min={0}
+          max={200}
+          step={1}
+        />
+        <div className="flex justify-between text-[10px] text-muted-foreground">
+          <span>0</span>
+          <span>200</span>
+        </div>
+      </div>
     </aside>
   );
 }

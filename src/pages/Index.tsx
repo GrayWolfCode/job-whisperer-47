@@ -1,11 +1,12 @@
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { fetchProjects, fetchSelf, type FreelancerProject } from "@/lib/freelancer-api";
 import { JobRow } from "@/components/JobRow";
 import { JobPagination } from "@/components/JobPagination";
 import { FilterSidebar, type Filters } from "@/components/FilterSidebar";
-import { Loader2, User } from "lucide-react";
+import { Loader2, User, Bell, BellOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const ITEMS_PER_PAGE = 100;
 
@@ -57,6 +58,13 @@ const Index = () => {
   const projects = data?.projects ?? [];
   const totalCount = data?.totalCount ?? 0;
 
+  // Notification state
+  const [notificationsEnabled, setNotificationsEnabled] = useState(
+    () => Notification.permission === "granted" && localStorage.getItem("notif") !== "off"
+  );
+  const seenIdsRef = useRef<Set<number>>(new Set());
+  const isFirstLoadRef = useRef(true);
+
   const filteredProjects = useMemo(() => {
     return projects.filter((p) => {
       if (filters.excludeCountries.length > 0) {
@@ -78,6 +86,44 @@ const Index = () => {
       return true;
     });
   }, [projects, filters]);
+
+  // Send desktop notifications for new filtered projects
+  useEffect(() => {
+    if (!notificationsEnabled || filteredProjects.length === 0) return;
+
+    if (isFirstLoadRef.current) {
+      filteredProjects.forEach((p) => seenIdsRef.current.add(p.id));
+      isFirstLoadRef.current = false;
+      return;
+    }
+
+    const newProjects = filteredProjects.filter((p) => !seenIdsRef.current.has(p.id));
+    newProjects.forEach((p) => {
+      seenIdsRef.current.add(p.id);
+      const skills = p.jobs.map((j) => j.name).join(", ");
+      const body = `${p.description?.slice(0, 120)}…\n\nSkills: ${skills}`;
+      try {
+        new Notification(p.title, {
+          body,
+          icon: "/favicon.ico",
+          tag: `project-${p.id}`,
+        });
+      } catch {}
+    });
+  }, [filteredProjects, notificationsEnabled]);
+
+  const toggleNotifications = async () => {
+    if (!notificationsEnabled) {
+      const perm = await Notification.requestPermission();
+      if (perm === "granted") {
+        setNotificationsEnabled(true);
+        localStorage.setItem("notif", "on");
+      }
+    } else {
+      setNotificationsEnabled(false);
+      localStorage.setItem("notif", "off");
+    }
+  };
 
   const paginatedProjects = filteredProjects;
   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
@@ -108,12 +154,23 @@ const Index = () => {
             <h1 className="text-xl font-bold text-foreground tracking-tight">Lancer</h1>
             <p className="text-xs text-muted-foreground mt-0.5">Live freelance projects</p>
           </div>
-          {userData && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <User className="w-4 h-4" />
-              <span className="font-medium text-foreground">{userData.display_name}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleNotifications}
+              className={notificationsEnabled ? "text-primary" : "text-muted-foreground"}
+              title={notificationsEnabled ? "Notifications on" : "Notifications off"}
+            >
+              {notificationsEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+            </Button>
+            {userData && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="w-4 h-4" />
+                <span className="font-medium text-foreground">{userData.display_name}</span>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

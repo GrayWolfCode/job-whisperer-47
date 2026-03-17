@@ -1,11 +1,12 @@
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { fetchProjects, fetchSelf, type FreelancerProject } from "@/lib/freelancer-api";
 import { JobRow } from "@/components/JobRow";
 import { JobPagination } from "@/components/JobPagination";
 import { FilterSidebar, type Filters } from "@/components/FilterSidebar";
-import { Loader2, User } from "lucide-react";
+import { Loader2, User, Bell, BellOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const ITEMS_PER_PAGE = 100;
 

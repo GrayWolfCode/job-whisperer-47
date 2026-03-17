@@ -154,12 +154,23 @@ const Index = () => {
             <h1 className="text-xl font-bold text-foreground tracking-tight">Lancer</h1>
             <p className="text-xs text-muted-foreground mt-0.5">Live freelance projects</p>
           </div>
-          {userData && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <User className="w-4 h-4" />
-              <span className="font-medium text-foreground">{userData.display_name}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleNotifications}
+              className={notificationsEnabled ? "text-primary" : "text-muted-foreground"}
+              title={notificationsEnabled ? "Notifications on" : "Notifications off"}
+            >
+              {notificationsEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+            </Button>
+            {userData && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="w-4 h-4" />
+                <span className="font-medium text-foreground">{userData.display_name}</span>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

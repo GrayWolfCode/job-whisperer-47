@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 
 export interface Filters {
   excludeCountries: string[];
   excludeSkills: string[];
   excludeReviewsBelow: number;
   maxBids: number;
+  requirePaymentVerified: boolean;
+  requireDepositMade: boolean;
 }
 
 interface Props {
@@ -164,6 +167,33 @@ export function FilterSidebar({ filters, onFiltersChange }: Props) {
         <div className="flex justify-between text-[10px] text-muted-foreground">
           <span>0</span>
           <span>200</span>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Verification toggles */}
+      <div className="space-y-3">
+        <label className="text-xs font-medium text-muted-foreground">Client verification:</label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="payment-verified" className="text-xs text-foreground">
+            Payment verified
+          </label>
+          <Switch
+            id="payment-verified"
+            checked={filters.requirePaymentVerified}
+            onCheckedChange={(v) => onFiltersChange({ ...filters, requirePaymentVerified: v })}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <label htmlFor="deposit-made" className="text-xs text-foreground">
+            Deposit made
+          </label>
+          <Switch
+            id="deposit-made"
+            checked={filters.requireDepositMade}
+            onCheckedChange={(v) => onFiltersChange({ ...filters, requireDepositMade: v })}
+          />
         </div>
       </div>
     </aside>

@@ -24,7 +24,7 @@ export interface FreelancerProject {
       };
     };
     registration_date?: number;
-    status?: { payment_verified?: boolean };
+    status?: { payment_verified?: boolean; deposit_made?: boolean };
     primary_currency?: { sign: string };
     employer_reputation?: {
       entire_history?: {

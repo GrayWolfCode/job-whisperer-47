@@ -20,6 +20,8 @@ function readFiltersFromParams(params: URLSearchParams): Filters {
     excludeSkills: skills ? skills.split(",").filter(Boolean) : [],
     excludeReviewsBelow: reviews ? Number(reviews) : 0,
     maxBids: bids ? Number(bids) : 0,
+    requirePaymentVerified: params.get("xp") === "1",
+    requireDepositMade: params.get("xd") === "1",
   };
 }
 
@@ -32,6 +34,10 @@ function writeFiltersToParams(filters: Filters, params: URLSearchParams) {
   else params.delete("xr");
   if (filters.maxBids > 0) params.set("xb", String(filters.maxBids));
   else params.delete("xb");
+  if (filters.requirePaymentVerified) params.set("xp", "1");
+  else params.delete("xp");
+  if (filters.requireDepositMade) params.set("xd", "1");
+  else params.delete("xd");
 }
 
 const Index = () => {
@@ -83,6 +89,8 @@ const Index = () => {
       if (filters.maxBids > 0) {
         if (p.bid_stats.bid_count >= filters.maxBids) return false;
       }
+      if (filters.requirePaymentVerified && !p.owner_info?.status?.payment_verified) return false;
+      if (filters.requireDepositMade && !p.owner_info?.status?.deposit_made) return false;
       return true;
     });
   }, [projects, filters]);
